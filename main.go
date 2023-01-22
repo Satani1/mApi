@@ -1,9 +1,11 @@
 package main
 
-import "net/http"
+import (
+	"api/api"
+	"net/http"
+)
 
 func main() {
-	mux := http.NewServeMux()
-
-	http.ListenAndServe("localhost:8080", mux)
+	srv := api.NewServer()
+	http.ListenAndServe("localhost:8080", srv)
 }
