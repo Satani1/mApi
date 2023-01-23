@@ -19,6 +19,10 @@ type FriendId struct {
 	TargetId json.Number `json:"target_id"`
 }
 
+type DeleteUser struct {
+	TargetId json.Number `json:"target_id"`
+}
+
 type Server struct {
 	*mux.Router
 
@@ -42,6 +46,7 @@ func (s *Server) routes() {
 	s.HandleFunc("/create", s.createUser()).Methods("POST")
 	s.HandleFunc("/get_users", s.listOfUsers()).Methods("GET")
 	s.HandleFunc("/make_friends", s.makeFriends()).Methods("POST")
+	s.HandleFunc("/user", s.deleteUser()).Methods("DELETE")
 }
 
 func (s *Server) createUser() http.HandlerFunc {
@@ -52,7 +57,7 @@ func (s *Server) createUser() http.HandlerFunc {
 			return
 		}
 
-		var id int = len(s.usersList) + 1
+		var id = len(s.usersList) + 1
 		s.usersList[id] = u
 
 		w.Header().Set("Content-Type", "application/json")
@@ -115,5 +120,23 @@ func (s *Server) makeFriends() http.HandlerFunc {
 		output := s.usersList[userIndexSource].Name + " and " + s.usersList[userIndexTarget].Name + " are friends now!"
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(output))
+	}
+}
+
+func (s *Server) deleteUser() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var u DeleteUser
+		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		userId, _ := u.TargetId.Int64()
+		var deletedUserName string
+		if thisUser, ok := s.usersList[int(userId)]; ok {
+			deletedUserName = thisUser.Name
+			delete(s.usersList, int(userId))
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(deletedUserName))
 	}
 }
