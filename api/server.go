@@ -85,7 +85,7 @@ func (s *Server) makeFriends() http.HandlerFunc {
 		}
 
 		var userIndexSource, userIndexTarget int
-		for key, _ := range s.usersList {
+		for key := range s.usersList {
 			sId, _ := u.SourceId.Int64()
 			tId, _ := u.TargetId.Int64()
 			if int64(key) == sId {
