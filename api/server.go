@@ -1,41 +1,23 @@
 package api
 
 import (
+	"api/pkg/user"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 )
 
-type User struct {
-	Name    string      `json:"name"`
-	Age     json.Number `json:"age"`
-	Friends []User      `json:"friends"`
-}
-
-type FriendId struct {
-	SourceId json.Number `json:"source_id"`
-	TargetId json.Number `json:"target_id"`
-}
-
-type DeleteUser struct {
-	TargetId json.Number `json:"target_id"`
-}
-
-type NewAge struct {
-	NewAge json.Number `json:"new_age"`
-}
-
 type Server struct {
 	*mux.Router
 
-	usersList map[int]User
+	usersList map[int]user.User
 }
 
 func NewServer() *Server {
 	s := &Server{
 		Router:    mux.NewRouter(),
-		usersList: map[int]User{},
+		usersList: map[int]user.User{},
 	}
 	s.routes()
 	return s
@@ -50,18 +32,18 @@ func (s *Server) routes() {
 			return
 		}
 	}).Methods("GET")
-	s.HandleFunc("/create", s.createUser()).Methods("POST")
+	s.HandleFunc("/create", s.CreateUser()).Methods("POST")
 	s.HandleFunc("/get_users", s.listOfUsers()).Methods("GET")
 	s.HandleFunc("/make_friends", s.makeFriends()).Methods("POST")
 	s.HandleFunc("/user", s.deleteUser()).Methods("DELETE")
-	s.HandleFunc("/friends", s.getUserFriends()).Methods("GET")
-	s.HandleFunc("/", s.changeUserAge()).Methods("PUT")
+	s.HandleFunc("/friends/{id}", s.getUserFriends()).Methods("GET")
+	s.HandleFunc("/{id}", s.changeUserAge()).Methods("PUT")
 }
 
-// handling a creation user
-func (s *Server) createUser() http.HandlerFunc {
+// CreateUser handling a creation user
+func (s *Server) CreateUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var u User
+		var u user.User
 		//get all user data from json
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -101,7 +83,7 @@ func (s *Server) listOfUsers() http.HandlerFunc {
 // make friends
 func (s *Server) makeFriends() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var u FriendId
+		var u user.FriendId
 		//get two userIds from json
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -150,7 +132,7 @@ func (s *Server) makeFriends() http.HandlerFunc {
 // delete user
 func (s *Server) deleteUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var u DeleteUser
+		var u user.DeleteUser
 		//get an userId from json
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -177,17 +159,19 @@ func (s *Server) deleteUser() http.HandlerFunc {
 func (s *Server) getUserFriends() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//get user id from url
-		userId, err := strconv.Atoi(r.URL.Query().Get("user_id"))
+		vars := mux.Vars(r)
+		id := vars["id"]
+		userId, err := strconv.Atoi(id)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		user := s.usersList[userId]
+		userFromList := s.usersList[userId]
 		var userData string
 		//get all friends of user
-		for _, user := range user.Friends {
-			userData += string(user.Name) + " " + string(user.Age) + "\n"
+		for _, userFromList := range userFromList.Friends {
+			userData += string(userFromList.Name) + " " + string(userFromList.Age) + "\n"
 		}
 		//output
 		w.WriteHeader(http.StatusOK)
@@ -202,13 +186,14 @@ func (s *Server) getUserFriends() http.HandlerFunc {
 func (s *Server) changeUserAge() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		//get user id from url
-		userId, err := strconv.Atoi(r.URL.Query().Get("user_id"))
+		vars := mux.Vars(r)
+		id := vars["id"]
+		userId, err := strconv.Atoi(id)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		var u NewAge //getting a new age from a json request
+		var u user.NewAge //getting a new age from a json request
 		if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
