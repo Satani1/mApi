@@ -1,4 +1,4 @@
-package main
+package first
 
 import (
 	"database/sql"
@@ -15,7 +15,7 @@ type Application struct {
 	socialDB *mysql.UserModel
 }
 
-const addr string = "localhost:9000"
+const addr string = "localhost:9001"
 const dsn string = "root:12345678@/socialDB?parseTime=true"
 
 func main() {
@@ -29,7 +29,7 @@ func main() {
 		errorLog.Fatal(err)
 	}
 	defer socialDB.Close()
-	//app model
+	//first model
 	App := &Application{
 		errorLog: errorLog,
 		infoLog:  infoLog,

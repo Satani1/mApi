@@ -1,6 +1,8 @@
-package main
+package first
 
-import "github.com/gorilla/mux"
+import (
+	"github.com/gorilla/mux"
+)
 
 func (app *Application) Routes() *mux.Router {
 	rMux := mux.NewRouter()
