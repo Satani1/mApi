@@ -8,7 +8,8 @@ import (
 )
 
 func (app *Application) Home(w http.ResponseWriter, r *http.Request) {
-	if _, err := w.Write([]byte("Hello, users!")); err != nil {
+	response := app.Addr
+	if _, err := w.Write([]byte("Hello, users! Im speak from addr - " + response)); err != nil {
 		app.ServeError(w, err)
 		return
 	}

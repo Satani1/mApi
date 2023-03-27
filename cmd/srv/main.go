@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"mApi/pkg/models/mysql"
@@ -13,12 +14,17 @@ type Application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
 	socialDB *mysql.UserModel
+	Addr     string
 }
 
-const addr string = "localhost:9001"
+// const addr string = "localhost:9001"
 const dsn string = "root:12345678@/socialDB?parseTime=true"
 
 func main() {
+	//addr config from terminal
+	addr := flag.String("addr", "localhost:4000", "Server Address")
+	flag.Parse()
+
 	//logs
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stdout, "ERORR\t", log.Ldate|log.Ltime|log.Lshortfile)
@@ -29,21 +35,22 @@ func main() {
 		errorLog.Fatal(err)
 	}
 	defer socialDB.Close()
-	//first model
+	//srv model
 	App := &Application{
 		errorLog: errorLog,
 		infoLog:  infoLog,
 		socialDB: &mysql.UserModel{DB: socialDB},
+		Addr:     *addr,
 	}
 
 	srv := &http.Server{
-		Addr:     addr,
+		Addr:     *addr,
 		ErrorLog: errorLog,
 		Handler:  App.Routes(),
 	}
 
 	//launch
-	infoLog.Printf("Launching server on %s", addr)
+	infoLog.Printf("Launching server on %s", *addr)
 	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
 }
